@@ -1,0 +1,18 @@
+# Blacklist everything
+*
+
+# Whitelist all directories
+!*/
+
+# Whitelist the matlab scripts
+
+!*.m
+
+# Whitelist .gitignore
+!.gitignore
+
+# Whitelist readme file
+
+!readme.md
+
+
