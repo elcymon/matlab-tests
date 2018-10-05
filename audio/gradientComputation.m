@@ -5,8 +5,8 @@ xdata = xy(:,2);
 ydata = xy(:,end);
 t = xy(:,1);
 hz = 40;
-PulsFilterData = cell(11,5);
-PulsFilterData(1,:) = {'Pitch','Trough','+grad','-grad','%+ve'};
+PulsFilterData = cell(11,6);
+PulsFilterData(1,:) = {'Pitch','Trough','+grad (Means)','-grad (Means)','%+ve (Means)','%+ve LineFit'};
 PulsFilterData(2:end,1:2) = {10,0;10,10;10,20;10,30;...
                              20,0;20,20;20,40;
                              40,0;40,40;40,80};
@@ -15,6 +15,7 @@ for i1 = 2:size(PulsFilterData,1)
     step = PulsFilterData{i1,2};
 
     stArt = 1;
+    prevstArt = stArt;
     eNd = w;
 
     yPulsZeros = NaN(size(ydata));
@@ -27,6 +28,8 @@ for i1 = 2:size(PulsFilterData,1)
     iw = w;
     bluePuls = 0;
     redPuls = 0;
+    blueLineFit = 0;
+    redLineFit = 0;
     Blue = 0;
     Red = 0;
     while eNd <= numel(ydata)
@@ -47,11 +50,24 @@ for i1 = 2:size(PulsFilterData,1)
                 bluePuls = bluePuls + 1;
 %                 Blue = plot(xPuls(j-1:j),yPulsmeans(j-1:j),lineColor);
             end
+            txdata = xdata(prevstArt:eNd);
+            tyPulsZeros = yPulsZeros(prevstArt:eNd);
+            txdata = txdata(~isnan(tyPulsZeros));
+            tyPulsZeros = tyPulsZeros(~isnan(tyPulsZeros));
+            p = polyfit(txdata,tyPulsZeros,1);
+            if p(1) > 0
+                redLineFit = redLineFit + 1;
+%                 plot(xdata(prevstArt:eNd),polyval(p,xdata(prevstArt:eNd)),'-r')
+            else
+                blueLineFit = blueLineFit + 1;
+%                 plot(xdata(prevstArt:eNd),polyval(p,xdata(prevstArt:eNd)),'-b')
+            end
         end
         yPulsmax(j) = max(ydata(stArt:eNd));
         if eNd == numel(ydata)
             break;
         end
+        prevstArt = stArt;
         stArt = eNd + step + 1;
         eNd = stArt + w;
         if eNd > numel(ydata)
@@ -59,9 +75,12 @@ for i1 = 2:size(PulsFilterData,1)
         end
         j = j + 1;
     end
+%     hold off
+%     pause
     PulsFilterData{i1,3} = bluePuls;
     PulsFilterData{i1,4} = redPuls;
     PulsFilterData{i1,5} = bluePuls/(redPuls+bluePuls);
+    PulsFilterData{i1,6} = blueLineFit/(redLineFit+blueLineFit);
 end
 %     legend([Blue,Red],{num2str(bluePuls/(redPuls+bluePuls)),num2str(redPuls/(redPuls+bluePuls))})
 %     hold off
