@@ -82,46 +82,70 @@ end
 % Fitting a line to data in intervals
 % figure(2)
 %     hold on
-    windowSize = 160;
-    startPoint = 1;
-    endPoint = windowSize;
-    yPoints = NaN(size(ydata));
-    blueLine = 0;
-    redLine = 0;
-    while endPoint <= numel(ydata)
-        if isempty(ydata(startPoint:endPoint))
-            break;
+    LineFitFilterData = cell(22,6);
+    LineFitFilterData(1,:) = {'Window Size','Shift','+grad','-grad','%+ve','Mean Time'};
+    LineFitFilterData(2:end,1:2) = {20 10; 20 20;
+                                    30 10; 30 20; 30 30;
+                                    40 10; 40 20; 40 30; 40 40;
+                                    60 10; 60 30; 60 50; 60 60;
+                                    80 10; 80 40; 80 50; 80 80;
+                                    120 10;120 50; 120 90; 120 120};
+    for i2 = 2:size(LineFitFilterData,1)
+        windowSize = LineFitFilterData{i2,1};
+        shift = LineFitFilterData{i2,2};
+        startPoint = 1;
+        endPoint = windowSize;
+        yPoints = NaN(size(ydata));
+        blueLine = 0;
+        redLine = 0;
+        tot_t = 0;%time taken to do polyfit
+        fitCount = 0;%number of polyfit performed
+        while endPoint <= numel(ydata)
+            if isempty(ydata(startPoint:endPoint))
+                break;
+            end
+            strt = clock;
+            p = polyfit(xdata(startPoint:endPoint),ydata(startPoint:endPoint),1);
+            fnsh = clock;
+            tot_t = tot_t + etime(fnsh,strt);
+            fitCount = fitCount + 1;
+            yPoints(startPoint:endPoint) = polyval(p,xdata(startPoint:endPoint));
+
+            lineColor = '-b';
+            if p(1) > 0
+                lineColor = '-r';
+                redLine = redLine + 1;
+    %             Red = plot(xdata(startPoint:endPoint),yPoints(startPoint:endPoint),lineColor);
+            else
+                blueLine = blueLine + 1;
+    %             Blue = plot(xdata(startPoint:endPoint),yPoints(startPoint:endPoint),lineColor);
+            end
+
+
+            startPoint = startPoint + shift;
+            endPoint = startPoint + windowSize - 1;
+            if endPoint == numel(ydata)
+                break;
+            end
+            if endPoint > numel(ydata)
+                endPoint = numel(ydata);
+            end
         end
-        p = polyfit(xdata(startPoint:endPoint),ydata(startPoint:endPoint),1);
-        yPoints(startPoint:endPoint) = polyval(p,xdata(startPoint:endPoint));
-        
-        lineColor = '-b';
-        if p(1) > 0
-            lineColor = '-r';
-            redLine = redLine + 1;
-        else
-            blueLine = blueLine + 1;
-        end
-        
-%         plot(xdata(startPoint:endPoint),yPoints(startPoint:endPoint),lineColor)
-        startPoint = endPoint + 1;
-        endPoint = startPoint + windowSize - 1;
-        if endPoint == numel(ydata)
-            break;
-        end
-        if endPoint > numel(ydata)
-            endPoint = numel(ydata);
-        end
+        LineFitFilterData{i2,3} = blueLine;
+        LineFitFilterData{i2,4} = redLine;
+        LineFitFilterData{i2,5} = blueLine / (redLine + blueLine);
+        LineFitFilterData{i2,6} = tot_t/fitCount;
+    %     legend([Blue,Red],{num2str(blueLine/(redLine+blueLine)),num2str(redLine/(redLine+blueLine))})
+    %     hold off
+    %     
+    %     ylabel('\boldmath Amplitude', 'Interpreter', 'Latex',...
+    %            'FontSize',20,'FontWeight','bold')
+    %     xlabel('\boldmath distance', 'Interpreter', 'Latex',...
+    %        'FontSize',20,'FontWeight','bold')
+    %     ylim([0 max(yPulsZeros)]);
+    %     fig = gcf;
+    %     fig.PaperPositionMode = 'auto';
+    %     fig_pos = fig.PaperPosition;
+    %     fig.PaperSize = [fig_pos(3) fig_pos(4)];
+    %     print(fig,sprintf('%s%s_windowSize-%d',filename,'_lineFit',windowSize),'-dpdf')
     end
-%     hold off
-%     
-%     ylabel('\boldmath Amplitude', 'Interpreter', 'Latex',...
-%            'FontSize',20,'FontWeight','bold')
-%     xlabel('\boldmath distance', 'Interpreter', 'Latex',...
-%        'FontSize',20,'FontWeight','bold')
-%     ylim([0 max(yPulsZeros)]);
-%     fig = gcf;
-%     fig.PaperPositionMode = 'auto';
-%     fig_pos = fig.PaperPosition;
-%     fig.PaperSize = [fig_pos(3) fig_pos(4)];
-%     print(fig,sprintf('%s%s_windowSize-%d',filename,'_lineFit',windowSize),'-dpdf')
