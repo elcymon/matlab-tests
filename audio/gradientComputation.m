@@ -1,76 +1,83 @@
 % Experiments on different filtering approaches
-filename = '20180909231249datagoexp1a';
+filename = '20180909231651datagoexp1b';
 xy = csvread(strcat(filename,'.txt'));
 xdata = xy(:,2);
 ydata = xy(:,end);
 t = xy(:,1);
 hz = 40;
-w = 40;
-step = w;
+w = 10;
+step = 1*w;
 
 stArt = 1;
 eNd = w;
 
-% tPuls = NaN(1,ceil(numel(ydata)/(step+w)));
-yPuls = NaN(1,ceil(numel(ydata)/(step+w)));
-% xPuls = NaN(1,ceil(numel(ydata)/(step+w)));
 yPulsZeros = NaN(size(ydata));
-yPulsmeans = NaN(ceil(numel(ydata)/(step+w)));
-yPulsmax = NaN(ceil(numel(ydata)/(step+w)));
+yPulsmeans = NaN(1,ceil(numel(ydata)/(step+w))-1);
+yPulsmax = NaN(1,ceil(numel(ydata)/(step+w))-1);
+xPuls = NaN(size(yPulsmeans));
 j = 1;
 i = 1;
-
+hold on
 iw = w;
+bluePuls = 0;
+redPuls = 0;
+Blue = 0;
+Red = 0;
 while eNd <= numel(ydata)
     if isempty(ydata(stArt:eNd))
         break;
     end
     yPulsZeros(stArt:eNd) = ydata(stArt:eNd);
     yPulsmeans(j) = mean(ydata(stArt:eNd));
+    xPuls(j) = median(xdata(stArt:eNd));
     
-    
+    lineColor = '-b';
+    if j > 1
+        if yPulsmeans(j-1) < yPulsmeans(j)
+            lineColor = '-r';
+            redPuls = redPuls + 1;
+            Red = plot(xPuls(j-1:j),yPulsmeans(j-1:j),lineColor);
+        else
+            bluePuls = bluePuls + 1;
+            Blue = plot(xPuls(j-1:j),yPulsmeans(j-1:j),lineColor);
+        end
+    end
     yPulsmax(j) = max(ydata(stArt:eNd));
-    
-    j = j + 1;
-%     tPuls(i:iw) = t(stArt:eNd);
-%     (yPuls(i:iw))
-%     (ydata(stArt:eNd))
-%     yPuls(i:iw) = ydata(stArt:eNd);
-%     xPuls(i:iw) = xdata(stArt:eNd);
     if eNd == numel(ydata)
         break;
     end
-    i = iw + 1;
-    iw = i + w;
     stArt = eNd + step + 1;
     eNd = stArt + w;
     if eNd > numel(ydata)
         eNd = numel(ydata);
-%         iw = numel(yPuls);
     end
-%     display(i)
+    j = j + 1;
 end
-figure(1)
-
-    plot(xdata,yPulsZeros)
-    ylabel('\boldmath Amplitude', 'Interpreter', 'Latex',...
-           'FontSize',20,'FontWeight','bold')
-    xlabel('\boldmath distance', 'Interpreter', 'Latex',...
-       'FontSize',20,'FontWeight','bold')
-    ylim([0 max(yPulsZeros)]);
-    fig = gcf;
-    fig.PaperPositionMode = 'auto';
-    fig_pos = fig.PaperPosition;
-    fig.PaperSize = [fig_pos(3) fig_pos(4)];
-    print(fig,sprintf('%s%s_width-%d_step-%d',filename,'_puls',w,step),'-dpdf')
+legend([Blue,Red],{num2str(bluePuls/(redPuls+bluePuls)),num2str(redPuls/(redPuls+bluePuls))})
+hold off
+% figure(1)
+% 
+%     plot(xdata,yPulsZeros)
+%     ylabel('\boldmath Amplitude', 'Interpreter', 'Latex',...
+%            'FontSize',20,'FontWeight','bold')
+%     xlabel('\boldmath distance', 'Interpreter', 'Latex',...
+%        'FontSize',20,'FontWeight','bold')
+%     ylim([0 max(yPulsZeros)]);
+%     fig = gcf;
+%     fig.PaperPositionMode = 'auto';
+%     fig_pos = fig.PaperPosition;
+%     fig.PaperSize = [fig_pos(3) fig_pos(4)];
+%     print(fig,sprintf('%s%s_width-%d_step-%d',filename,'_puls',w,step),'-dpdf')
 % --------------------------------------
 % Fitting a line to data in intervals
-figure(2)
-    hold on
+% figure(2)
+%     hold on
     windowSize = 160;
     startPoint = 1;
     endPoint = windowSize;
     yPoints = NaN(size(ydata));
+    blueLine = 0;
+    redLine = 0;
     while endPoint <= numel(ydata)
         if isempty(ydata(startPoint:endPoint))
             break;
@@ -81,8 +88,12 @@ figure(2)
         lineColor = '-b';
         if p(1) > 0
             lineColor = '-r';
+            redLine = redLine + 1;
+        else
+            blueLine = blueLine + 1;
         end
-        plot(xdata(startPoint:endPoint),yPoints(startPoint:endPoint),lineColor)
+        
+%         plot(xdata(startPoint:endPoint),yPoints(startPoint:endPoint),lineColor)
         startPoint = endPoint + 1;
         endPoint = startPoint + windowSize - 1;
         if endPoint == numel(ydata)
@@ -93,15 +104,15 @@ figure(2)
         end
         
     end
-    hold off
-    
-    ylabel('\boldmath Amplitude', 'Interpreter', 'Latex',...
-           'FontSize',20,'FontWeight','bold')
-    xlabel('\boldmath distance', 'Interpreter', 'Latex',...
-       'FontSize',20,'FontWeight','bold')
-    ylim([0 max(yPulsZeros)]);
-    fig = gcf;
-    fig.PaperPositionMode = 'auto';
-    fig_pos = fig.PaperPosition;
-    fig.PaperSize = [fig_pos(3) fig_pos(4)];
-    print(fig,sprintf('%s%s_windowSize-%d',filename,'_lineFit',windowSize),'-dpdf')
+%     hold off
+%     
+%     ylabel('\boldmath Amplitude', 'Interpreter', 'Latex',...
+%            'FontSize',20,'FontWeight','bold')
+%     xlabel('\boldmath distance', 'Interpreter', 'Latex',...
+%        'FontSize',20,'FontWeight','bold')
+%     ylim([0 max(yPulsZeros)]);
+%     fig = gcf;
+%     fig.PaperPositionMode = 'auto';
+%     fig_pos = fig.PaperPosition;
+%     fig.PaperSize = [fig_pos(3) fig_pos(4)];
+%     print(fig,sprintf('%s%s_windowSize-%d',filename,'_lineFit',windowSize),'-dpdf')
