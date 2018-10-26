@@ -6,12 +6,10 @@ ydata = xy(:,end);
 % Get signal model fit
 [pSignal,mError,sError] = FitSoundModel(xdata,ydata,[200 1], 48.1824);
 % Generate noisy signal model based on pure signal, mean and std
-noisyModel = pSignal + 1.0*sError .* randn(size(pSignal)) + mError;
 t = xy(:,1);
 hz = 40;
-PulsFitHeader = {'Pitch','Trough','+grad (Means)','-grad (Means)','%+ve (Means)',...
-                        '+grad (LineFit)','-grad (LineFit)','%+ve LineFit',...
-                        '+grad TVRegDiff','-grad TVRegDiff','%+ve TVRegDiff'};
+PulsFitHeader = {'Pitch','Trough','%+ve (Means)',...
+                        '%+ve LineFit','%+ve TVRegDiff'};
 PulsFitTests = {10,0;10,10;20,0;10,20;30,0;10,30;...
                              20,20;40,0;20,40;60,0;
                              40,40;80,0;40,80;120,0};
@@ -19,99 +17,117 @@ PulsFitTests = {10,0;10,10;20,0;10,20;30,0;10,30;...
 PulsFilterData = cell(size(PulsFitTests,1)+1,size(PulsFitHeader,2));
 PulsFilterData(1,:) = PulsFitHeader;
 PulsFilterData(2:end,1:2) = PulsFitTests;
-soundData = noisyModel;
-for i1 = 2:size(PulsFilterData,1)
-    w = PulsFilterData{i1,1};
-    step = PulsFilterData{i1,2};
+Iters = 30;
+MeansFilter = NaN(size(PulsFilterData,1)-1,Iters);%number of rows equal test cases each done Iters time (columns)
+LineFitFilter = NaN(size(PulsFilterData,1)-1,Iters);
+TVRegDiffFilter = NaN(size(PulsFilterData,1)-1,Iters);
 
-    stArt = 1;
-    prevstArt = stArt;
-    eNd = w;
+for ii = 1:Iters
+    noisyModel = pSignal + 0.25*sError .* randn(size(pSignal)) + mError;
+    soundData = noisyModel;
+    for i1 = 1:size(MeansFilter,1)
+        w = PulsFilterData{i1+1,1};
+        step = PulsFilterData{i1+1,2};
 
-    yPulsZeros = NaN(size(soundData));
-    yPulsmeans = NaN(1,ceil(numel(soundData)/(step+w))-1);
-    yPulsmax = NaN(1,ceil(numel(soundData)/(step+w))-1);
-    xPuls = NaN(size(yPulsmeans));
-    j = 1;
-    i = 1;
-%     hold on
-    iw = w;
-    bluePuls = 0;
-    redPuls = 0;
-    blueLineFit = 0;
-    redLineFit = 0;
-    Blue = 0;
-    Red = 0;
-    
-    blueTVRegDiff = 0;
-    redTVRegDiff = 0;
-    while eNd <= numel(soundData)
-        if isempty(soundData(stArt:eNd))
-            break;
-        end
-        yPulsZeros(stArt:eNd) = soundData(stArt:eNd);
-        yPulsmeans(j) = mean(soundData(stArt:eNd));
-        xPuls(j) = median(xdata(stArt:eNd));
-
-        lineColor = '-b';
-        if j > 1
-            if yPulsmeans(j-1) < yPulsmeans(j)
-                lineColor = '-r';
-                redPuls = redPuls + 1;
-%                 Red = plot(xPuls(j-1:j),yPulsmeans(j-1:j),lineColor);
-            else
-                bluePuls = bluePuls + 1;
-%                 Blue = plot(xPuls(j-1:j),yPulsmeans(j-1:j),lineColor);
-            end
-            txdata = xdata(prevstArt:eNd);
-            tyPulsZeros = yPulsZeros(prevstArt:eNd);
-            txdata = txdata(~isnan(tyPulsZeros));
-            tyPulsZeros = tyPulsZeros(~isnan(tyPulsZeros));
-            p = polyfit(txdata,tyPulsZeros,1);
-            if p(1) > 0
-                redLineFit = redLineFit + 1;
-%                 plot(xdata(prevstArt:eNd),polyval(p,xdata(prevstArt:eNd)),'-r')
-            else
-                blueLineFit = blueLineFit + 1;
-%                 plot(xdata(prevstArt:eNd),polyval(p,xdata(prevstArt:eNd)),'-b')
-            end
-            
-            
-%             Computing grad using TVRegDiff and counting the positive
-%             gradients returned
-%             u = TVRegDiff(            data,    iter,alph,u0,scale,ep,dx,plotflag,diagflag )
-            tvRegDiffgrads = TVRegDiff(tyPulsZeros,1, 10, [], [],  [],[],  0,      0);
-            tvRegDiffgrads = sign(tvRegDiffgrads);
-            blueTVRegDiff = blueTVRegDiff + sum(tvRegDiffgrads==-1);
-            redTVRegDiff = redTVRegDiff + sum(tvRegDiffgrads==1);
-        end
-        yPulsmax(j) = max(soundData(stArt:eNd));
-        if eNd == numel(soundData)
-            break;
-        end
+        stArt = 1;
         prevstArt = stArt;
-        stArt = eNd + step + 1;
-        eNd = stArt + w - 1;
-        if eNd > numel(soundData)
-            eNd = numel(soundData);
-        end
-%         display(sprintf('%i',j))
-        j = j + 1;
-    end
-%     hold off
-%     pause
-    PulsFilterData{i1,3} = bluePuls;
-    PulsFilterData{i1,4} = redPuls;
-    PulsFilterData{i1,5} = bluePuls/(redPuls+bluePuls) * 100;
-    PulsFilterData{i1,6} = blueLineFit;
-    PulsFilterData{i1,7} = redLineFit;
-    PulsFilterData{i1,8} = blueLineFit/(redLineFit+blueLineFit) * 100;
-    PulsFilterData{i1,9} = blueTVRegDiff;
-    PulsFilterData{i1,10} = redTVRegDiff;
-    PulsFilterData{i1,11} = blueTVRegDiff/(redTVRegDiff+blueTVRegDiff) * 100;
-    display(sprintf('%.2f%',(i1-1)/numel(2:size(PulsFilterData,1)) * 100))
-end
+        eNd = w;
 
+        yPulsZeros = NaN(size(soundData));
+        yPulsmeans = NaN(1,ceil(numel(soundData)/(step+w))-1);
+        yPulsmax = NaN(1,ceil(numel(soundData)/(step+w))-1);
+        j = 1;
+        i = 1;
+    %     hold on
+        iw = w;
+        bluePuls = 0;
+        redPuls = 0;
+        blueLineFit = 0;
+        redLineFit = 0;
+        Blue = 0;
+        Red = 0;
+
+        blueTVRegDiff = 0;
+        redTVRegDiff = 0;
+        while eNd <= numel(soundData)
+            if isempty(soundData(stArt:eNd))
+                break;
+            end
+            yPulsZeros(stArt:eNd) = soundData(stArt:eNd);
+            yPulsmeans(j) = mean(soundData(stArt:eNd));
+
+            lineColor = '-b';
+            if j > 1
+                if yPulsmeans(j-1) < yPulsmeans(j)
+                    lineColor = '-r';
+                    redPuls = redPuls + 1;
+    %                 Red = plot(xPuls(j-1:j),yPulsmeans(j-1:j),lineColor);
+                else
+                    bluePuls = bluePuls + 1;
+    %                 Blue = plot(xPuls(j-1:j),yPulsmeans(j-1:j),lineColor);
+                end
+                txdata = xdata(prevstArt:eNd);
+                tyPulsZeros = yPulsZeros(prevstArt:eNd);
+                txdata = txdata(~isnan(tyPulsZeros));
+                tyPulsZeros = tyPulsZeros(~isnan(tyPulsZeros));
+                p = polyfit(txdata,tyPulsZeros,1);
+                if p(1) > 0
+                    redLineFit = redLineFit + 1;
+    %                 plot(xdata(prevstArt:eNd),polyval(p,xdata(prevstArt:eNd)),'-r')
+                else
+                    blueLineFit = blueLineFit + 1;
+    %                 plot(xdata(prevstArt:eNd),polyval(p,xdata(prevstArt:eNd)),'-b')
+                end
+
+
+    %             Computing grad using TVRegDiff and counting the positive
+    %             gradients returned
+    %             u = TVRegDiff(            data,    iter,alph,u0,scale,ep,dx,plotflag,diagflag )
+                
+                tvRegDiffgrads = TVRegDiff(tyPulsZeros,20, 10, [], [],  [],[],  0,      0);
+                tvRegDiffgrads = sign(tvRegDiffgrads);
+                blueTVRegDiff = blueTVRegDiff + sum(tvRegDiffgrads==-1);
+                redTVRegDiff = redTVRegDiff + sum(tvRegDiffgrads==1);
+            end
+            yPulsmax(j) = max(soundData(stArt:eNd));
+            if eNd == numel(soundData)
+                break;
+            end
+            prevstArt = stArt;
+            stArt = eNd + step + 1;
+            eNd = stArt + w - 1;
+            if eNd > numel(soundData)
+                eNd = numel(soundData);
+            end
+    %         display(sprintf('%i',j))
+            j = j + 1;
+        end
+    %     hold off
+    %     pause
+        
+        MeansFilter(i1,ii) = bluePuls/(redPuls+bluePuls) * 100;
+        LineFitFilter(i1,ii) = blueLineFit/(redLineFit+blueLineFit) * 100;
+        TVRegDiffFilter(i1,ii) = blueTVRegDiff/(redTVRegDiff+blueTVRegDiff) * 100;
+        
+        display(sprintf('%3i:%.2f',ii,i1/numel(1:size(MeansFilter,1)) * 100))
+    end
+    
+end
+% MeansFilterCells = arrayfun(@(MN,STD) sprintf('%.2f %c%.2f',MN,char(177),STD),mean(MeansFilter,2),std(MeansFilter,0,2),...
+%                                 'UniformOutput',false);
+% LineFitFilterCells = arrayfun(@(MN,STD) sprintf('%.2f %c%.2f',MN,char(177),STD),mean(LineFitFilter,2),std(LineFitFilter,0,2),...
+%                                 'UniformOutput',false);
+% TVRegDiffCells = arrayfun(@(MN,STD) sprintf('%.2f %c%.2f',MN,char(177),STD),mean(TVRegDiffFilter,2),std(TVRegDiffFilter,0,2),...
+%                                 'UniformOutput',false);
+MeansFilterCells = arrayfun(@(MN,STD) sprintf('%.2f $%s$ %.2f',MN,'\pm',STD),mean(MeansFilter,2),std(MeansFilter,0,2),...
+                                'UniformOutput',false);
+LineFitFilterCells = arrayfun(@(MN,STD) sprintf('%.2f $%s$ %.2f',MN,'\pm',STD),mean(LineFitFilter,2),std(LineFitFilter,0,2),...
+                                'UniformOutput',false);
+TVRegDiffCells = arrayfun(@(MN,STD) sprintf('%.2f $%s$ %.2f',MN,'\pm',STD),mean(TVRegDiffFilter,2),std(TVRegDiffFilter,0,2),...
+                                'UniformOutput',false);
+PulsFilterData(2:end,3) = MeansFilterCells;
+PulsFilterData(2:end,4) = LineFitFilterCells;
+PulsFilterData(2:end,5) = TVRegDiffCells;
 
 
 
