@@ -15,6 +15,8 @@ function [pureSignal,meanError,stdError] = FitSoundModel(xdata,ydata,x0,Ae)
     
     x = lsqcurvefit(ndeed,x0,xdata,ydata);
     
+    display(sprintf('%d ',x))
+    
     pureSignal = ndeed(x,xdata);
     
     yError = pureSignal - ydata;
