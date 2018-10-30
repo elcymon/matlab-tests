@@ -1,4 +1,4 @@
-function [tModel,xModel,pureSignal,meanError,stdError] = developSoundModel(expFiles)
+function [tModel,xModel,pureSignal,meanError,stdError] = developSoundModel(expData)
 %     Initialize the parameters for fitting the sound models
     x0 = [200 1];
     Ae = 48.1824;
@@ -14,15 +14,15 @@ function [tModel,xModel,pureSignal,meanError,stdError] = developSoundModel(expFi
     allX = [];
     allY = [];
     allT = [];
-    for i1 = 1:numel(expFiles)
-        xy = csvread(strcat(expFiles{i1},'.txt'));
-        xdata = xy(:,2);
-        ydata = xy(:,end);
-        tdata = xy(:,1);
+    for i1 = 1:size(expData,2)
+%         xy = csvread(strcat(expFiles{i1},'.txt'));
+        xdata = expData{2,i1};
+        ydata = expData{1,i1};
+        tdata = expData{3,i1};
         allX = [allX;xdata];
         allY = [allY;ydata];
         allT = [allT;tdata];
-        numel(xdata)
+%         numel(xdata)
         if isnan(nDataPoints)
             nDataPoints = numel(xdata);
         elseif nDataPoints < numel(xdata)
