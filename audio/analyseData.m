@@ -1,4 +1,4 @@
-function Analysis = analyseData(expData,varargin)
+function Analysis = analyseData(expData,Tests,varargin)
     if length(varargin) == 3
         sError = varargin{1};
         mError = varargin{2};
@@ -13,16 +13,17 @@ function Analysis = analyseData(expData,varargin)
         Iters = size(expData,2);
     end
     
-    PulsFitHeader = {'Pitch','Trough','%+ve (Means)',...
+    PulsFitHeader = {'Pitch,Trough','%+ve (Means)',...
                             '%+ve LineFit','%+ve LinearReg',...
                             '%+ve TVRegDiff'};
-    PulsFitTests = {10,0;10,10;20,0;10,20;30,0;10,30;...
-                                 20,20;40,0;20,40;60,0;
-                                 40,40;80,0;40,80;120,0};
+    PulsFitTests = Tests;
 
     PulsFilterData = cell(size(PulsFitTests,1)+1,size(PulsFitHeader,2));
     PulsFilterData(1,:) = PulsFitHeader;
-    PulsFilterData(2:end,1:2) = PulsFitTests;
+    for Si = 1:size(PulsFitTests,1)
+        PulsFilterData{Si+1,1} = sprintf('%i,%i',PulsFitTests{Si,1},PulsFitTests{Si,2});
+    end
+%     PulsFilterData(2:end,1:2) = PulsFitTests;
     
     MeansFilter = NaN(size(PulsFilterData,1)-1,Iters);%number of rows equal test cases each done Iters time (columns)
     LineFitFilter = NaN(size(PulsFilterData,1)-1,Iters);
@@ -44,8 +45,8 @@ function Analysis = analyseData(expData,varargin)
         
         
         for i1 = 1:size(MeansFilter,1)
-            w = PulsFilterData{i1+1,1};
-            step = PulsFilterData{i1+1,2};
+            w = PulsFitTests{i1,1};
+            step = PulsFitTests{i1,2};
 
             stArt = 1;
             prevstArt = stArt;
@@ -95,7 +96,7 @@ function Analysis = analyseData(expData,varargin)
                     txdata = txdata(~isnan(tyPulsZeros));
                     ttdata = ttdata(~isnan(tyPulsZeros));
                     tyPulsZeros = tyPulsZeros(~isnan(tyPulsZeros));
-                    p = [0,0];%polyfit(txdata,tyPulsZeros,1);
+                    p = polyfit(txdata,tyPulsZeros,1);
                     if p(1) > 0
                         redLineFit = redLineFit + 1;
         %                 plot(xdata(prevstArt:eNd),polyval(p,xdata(prevstArt:eNd)),'-r')
@@ -122,10 +123,10 @@ function Analysis = analyseData(expData,varargin)
         %             gradients returned
         %             u = TVRegDiff(            data,    iter,alph,u0,scale,ep,dx,plotflag,diagflag )
 
-%                     tvRegDiffgrads = TVRegDiff(tyPulsZeros,20, 10, [], [],  [],[],  0,      0);
-%                     tvRegDiffgrads = sign(tvRegDiffgrads);
-                    blueTVRegDiff = 1;%blueTVRegDiff + sum(tvRegDiffgrads==-1);
-                    redTVRegDiff = 1;%redTVRegDiff + sum(tvRegDiffgrads==1);
+                    tvRegDiffgrads = TVRegDiff(tyPulsZeros,20, 10, [], [],  [],[],  0,      0);
+                    tvRegDiffgrads = sign(tvRegDiffgrads);
+                    blueTVRegDiff = blueTVRegDiff + sum(tvRegDiffgrads==-1);
+                    redTVRegDiff = redTVRegDiff + sum(tvRegDiffgrads==1);
                 end
                 yPulsmax(j) = max(soundData(stArt:eNd));
                 if eNd == numel(soundData)
@@ -167,10 +168,10 @@ function Analysis = analyseData(expData,varargin)
     TVRegDiffCells = arrayfun(@(MN,STD) sprintf('%.2f $%s$ %.2f',MN,'\pm',STD),mean(TVRegDiffFilter,2),std(TVRegDiffFilter,0,2),...
                                     'UniformOutput',false);
                                 
-    PulsFilterData(2:end,3) = MeansFilterCells;
-    PulsFilterData(2:end,4) = LineFitFilterCells;
-    PulsFilterData(2:end,5) = LineRegFilterCells;
-    PulsFilterData(2:end,6) = TVRegDiffCells;
+    PulsFilterData(2:end,2) = MeansFilterCells;
+    PulsFilterData(2:end,3) = LineFitFilterCells;
+    PulsFilterData(2:end,4) = LineRegFilterCells;
+    PulsFilterData(2:end,5) = TVRegDiffCells;
 
     Analysis = PulsFilterData;
 end
