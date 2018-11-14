@@ -12,7 +12,7 @@ end
 Analysis = analyseData(experimentData);
 xlswrite('GradientAnalysis.xlsx',Analysis,'Real Experiments','A1');
 
-[tModel,xModel,pureSignal,meanError,stdError] = developSoundModel(experimentData);
+[tModel,xModel,pureSignal,meanError,stdError,AnAlpha] = developSoundModel(experimentData);
 
 % 100% Standard deviation error
 Analysis = analyseData({pureSignal,xModel,tModel},stdError,meanError,1.0);

@@ -95,7 +95,7 @@ function Analysis = analyseData(expData,varargin)
                     txdata = txdata(~isnan(tyPulsZeros));
                     ttdata = ttdata(~isnan(tyPulsZeros));
                     tyPulsZeros = tyPulsZeros(~isnan(tyPulsZeros));
-                    p = polyfit(txdata,tyPulsZeros,1);
+                    p = [0,0];%polyfit(txdata,tyPulsZeros,1);
                     if p(1) > 0
                         redLineFit = redLineFit + 1;
         %                 plot(xdata(prevstArt:eNd),polyval(p,xdata(prevstArt:eNd)),'-r')
@@ -122,10 +122,10 @@ function Analysis = analyseData(expData,varargin)
         %             gradients returned
         %             u = TVRegDiff(            data,    iter,alph,u0,scale,ep,dx,plotflag,diagflag )
 
-                    tvRegDiffgrads = TVRegDiff(tyPulsZeros,20, 10, [], [],  [],[],  0,      0);
-                    tvRegDiffgrads = sign(tvRegDiffgrads);
-                    blueTVRegDiff = blueTVRegDiff + sum(tvRegDiffgrads==-1);
-                    redTVRegDiff = redTVRegDiff + sum(tvRegDiffgrads==1);
+%                     tvRegDiffgrads = TVRegDiff(tyPulsZeros,20, 10, [], [],  [],[],  0,      0);
+%                     tvRegDiffgrads = sign(tvRegDiffgrads);
+                    blueTVRegDiff = 1;%blueTVRegDiff + sum(tvRegDiffgrads==-1);
+                    redTVRegDiff = 1;%redTVRegDiff + sum(tvRegDiffgrads==1);
                 end
                 yPulsmax(j) = max(soundData(stArt:eNd));
                 if eNd == numel(soundData)

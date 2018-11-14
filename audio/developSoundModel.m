@@ -1,4 +1,4 @@
-function [tModel,xModel,pureSignal,meanError,stdError] = developSoundModel(expData)
+function [tModel,xModel,pureSignal,meanError,stdError,x] = developSoundModel(expData)
 %     Initialize the parameters for fitting the sound models
     x0 = [200 1];
     Ae = 48.1824;
