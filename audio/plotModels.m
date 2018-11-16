@@ -1,10 +1,11 @@
 function plotModels(varargin)
-    if len(varargin) == 4
+% varargin = [];
+    if length(varargin) == 4
         mError = varargin{1};
         sError = varargin{2};
         pureSignal = varargin{3};
         experimentData = varargin{4};
-    elseif len(varargin) == 0
+    elseif isempty(varargin)
         experimentData = readExperimentData();
         [tModel,xModel,pureSignal,mError,sError,A0nAlpha]...
             = developSoundModel(experimentData);
@@ -64,10 +65,19 @@ function plotModels(varargin)
     % working on the pure signal to extract the gradient magnitudes
     figure(2)
     % ON INSTANTANEOUS DATA
-    grads = diff(fliplr(pureSignal));
+    grads = diff(fliplr(pureSignal)) ./ diff(fliplr(xModel));
     xdistance = linspace(max(xModel),min(xModel),numel(grads));
-    plot(xdistance,grads, 'LineWidth',2),ylim([0 Inf])
-    ylabel('Magnitude of Gradient')
+    plot(xdistance,grads, 'LineWidth',2)
+    yMax = 0;
+    yMin = 0;
+    if max(grads) > 0
+        yMax = Inf;
+    end
+    if min(grads) < 0
+        yMin = -Inf;
+    end
+    ylim([yMin yMax])
+    ylabel('Gradient (dy/dx)')
     xlabel('Distance in metres')
 
     fig = gcf;
@@ -80,18 +90,31 @@ function plotModels(varargin)
     % ON 40 QSIZE
     xPts = 1:40:numel(pureSignal);
     signalChunks = NaN(size(xPts));
+    xChunks = NaN(size(xPts));
 
     for i = 1:numel(xPts)-1
         signalChunks(i) = mean(pureSignal(xPts(i):xPts(i+1)));
+        xChunks(i) = mean(xModel(xPts(i):xPts(i+1)));
     end
 
     signalChunks = fliplr(signalChunks);
-    grads40 = diff(signalChunks);
-    xdistance40 = linspace(max(xModel), min(xModel), numel(grads40));
+    xChunks = fliplr(xChunks);
+    
+    grads40 = diff(signalChunks) ./ diff(xChunks);
+    xdistance40 = linspace(max(xChunks), min(xChunks), numel(grads40));
 
     plot(xdistance40,grads40,'LineWidth',2,...
-        'DisplayName','QSize = 40'),ylim([0 Inf])
-    ylabel('Magnitude of Gradient')
+        'DisplayName','QSize = 40')
+    yMax = 0;
+    yMin = 0;
+    if max(grads40) > 0
+        yMax = Inf;
+    end
+    if min(grads40) < 0
+        yMin = -Inf;
+    end
+    ylim([yMin yMax])
+    ylabel('Gradient (dy/dx)')
     xlabel('Distance in metres')
 
     fig = gcf;
@@ -99,4 +122,32 @@ function plotModels(varargin)
     fig_pos = fig.PaperPosition;
     fig.PaperSize = [fig_pos(3) fig_pos(4)];
     print(fig,'gradient-magnitude-40-pure','-dpdf')
+    
+%     Combined plot of both gradients
+    figure(4)
+    plot(xdistance,grads, 'LineWidth',2,...
+        'DisplayName','QSize = 1')
+    yMax = 0;
+    yMin = 0;
+    if max([grads40,grads]) > 0
+        yMax = Inf;
+    end
+    if min([grads40,grads]) < 0
+        yMin = -Inf;
+    end
+    ylim([yMin yMax])
+    hold on
+    plot(xdistance40,grads40,'LineWidth',2,...
+        'DisplayName','QSize = 40')
+    ylabel('Gradient (dy/dx)')
+    xlabel('Distance in metres')
+    hold off
+    
+    legend('show')
+    fig = gcf;
+    fig.PaperPositionMode = 'auto';
+    fig_pos = fig.PaperPosition;
+    fig.PaperSize = [fig_pos(3) fig_pos(4)];
+    print(fig,'gradient-magnitude-40-vs-1-pure','-dpdf')
+    
 end

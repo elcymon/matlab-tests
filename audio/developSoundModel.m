@@ -1,57 +1,30 @@
 function [tModel,xModel,pureSignal,meanError,stdError,x] = developSoundModel(expData)
+% expData is a cell matrix of all sound experiments conducted. It is
+% arranged in the form of 3 by n cell matrix, where each column represent
+% an experiment and the rows are for sound intensity, relative distance
+% from source gotten from encoder readings and corresponding time in
+% seconds measured by the robot respectively (i.e. rows are sound
+% intensity, distance and time for row 1, 2 and 3 respectively)
 %     Initialize the parameters for fitting the sound models
     x0 = [200 1];
     Ae = 48.1824;
-    ndeed = @(x,xData) x(1) * (exp(-x(2) * xData)) + Ae;
-%     Initialize parameters needed for extracting experiment data needed
-    minX = NaN;
-    maxX = NaN;
-    minT = NaN;
-    maxT = NaN;
+    ndeed = @(x,xData) x(1) * (exp(-x(2) * xData)) + Ae; 
     
-    nDataPoints = NaN;%for knowing how many x,y points to gnenerate
-        
-    allX = [];
-    allY = [];
-    allT = [];
-    for i1 = 1:size(expData,2)
-%         xy = csvread(strcat(expFiles{i1},'.txt'));
-        xdata = expData{2,i1};
-        ydata = expData{1,i1};
-        tdata = expData{3,i1};
-        allX = [allX;xdata];
-        allY = [allY;ydata];
-        allT = [allT;tdata];
-%         numel(xdata)
-        if isnan(nDataPoints)
-            nDataPoints = numel(xdata);
-        elseif nDataPoints < numel(xdata)
-            nDataPoints = numel(xdata);
-        end
-%         Extract minimum values
-        if isnan(minX)
-            minX = min(xdata);
-        elseif minX > min(xdata)
-            minX = min(xdata);
-        end
-        if isnan(minT)
-            minT = min(tdata);
-        elseif minT > min(tdata)
-            minT = min(tdata);
-        end
-        
-%         Extract maximum values
-        if isnan(maxX)
-            maxX = min(xdata);
-        elseif maxX < max(xdata)
-            maxX = max(xdata);
-        end
-        if isnan(maxT)
-            maxT = min(tdata);
-        elseif maxT < min(tdata)
-            maxT = max(tdata);
-        end
-    end
+    allY = cell2mat(expData(1,:)');
+    allX = cell2mat(expData(2,:)');
+    allT = cell2mat(expData(3,:)');
+%     sort the data
+    [allT, sortOrder] = sort(allT);
+    allY = allY(sortOrder,:);
+    allX = allX(sortOrder,:);
+    
+%     Initialize parameters needed for extracting experiment data needed
+    minX = min(allX);
+    maxX = max(allX);
+    minT = min(allT);
+    maxT = max(allT);
+    
+    nDataPoints = max(cellfun(@numel,expData(1,:)));%for knowing how many x,y points to gnenerate
     
 %     Get perform curvefit on all experiment data
     x = lsqcurvefit(ndeed,x0,allX,allY);
