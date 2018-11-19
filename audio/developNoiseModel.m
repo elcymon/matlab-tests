@@ -11,24 +11,28 @@ function noiseParams = developNoiseModel(expData)
     minD = 0;
     maxD = ceil(max(allX));
     Step = 1;
-    Stops = minD:Step:maxD-1;
+    Stops = minD:Step:maxD;
     
     Headers = cell(1,numel(Stops));
     Headers{1} = 'Distance (m)';
-    for i = Stops
-        Headers{i+2} = sprintf('%i to %i ',i,i+1);
+    for i = 1:numel(Stops)-1
+        Headers{i+1} = sprintf('%i to %i ',Stops(i),Stops(i+1));
     end
     
-    noiseParams = cell(4,numel(Headers));
+    noiseParams = cell(7,numel(Headers));
     noiseParams(1,1:end) = Headers;
-    noiseParams(2:4,1) = {'mError';'sError';'mIntensity'};
+    noiseParams(2:end,1) = {'mError';'sError';'mIntensity'...
+                            ;'mDistance';'mTime';'sig2noise'};
     
     
     currMin = minD;
     currMax = minD + Step;
-    
+    i1 = 1;
+    figure(1)
     plot(allX,allY)
-    
+    ylim([0 Inf])
+    ylabel('Intensity')
+    xlabel('Distance (metres)')
     hold on
     while currMax <= maxD
         pYbin = allY(allX >=currMin & allX <= currMax);
@@ -39,13 +43,31 @@ function noiseParams = developNoiseModel(expData)
         lineFit = pXbin .* p(1) + p(2);
         lineError = lineFit - pYbin;
         
-        noiseParams{2,currMax + 1} = mean(lineError);
-        noiseParams{3,currMax + 1} = std(lineError);
-        noiseParams{4,currMax + 1} = mean(pYbin);
+        noiseParams{2,i1 + 1} = mean(lineError);
+        noiseParams{3,i1 + 1} = std(lineError);
+        noiseParams{4,i1 + 1} = mean(pYbin);
+        noiseParams{5,i1 + 1} = mean(pXbin);
+        noiseParams{6,i1 + 1} = mean(pTbin);
+        noiseParams{7,i1 + 1} = mean(pYbin)\std(lineError);
         currMin = currMax;
         currMax = currMax + Step;
+        i1 = i1 + 1;
         
         plot(pXbin,lineFit,'k','LineWidth',2)
     end
     hold off
+    savePlot(gcf,'line-fits-noise-model')
+    figure(2)
+        scatter(cell2mat(noiseParams(5,2:end)),cell2mat(noiseParams(7,2:end)))
+        ylim([0 max(cell2mat(noiseParams(7,2:end)))*1.5])
+        ylabel('(Noise Stdev) / (Mean Intensity)')
+        xlabel('Distance (metres)')
+        savePlot(gcf,'noise-stdev-to-mean-intensity')
+        
+    figure(3)
+        scatter(cell2mat(noiseParams(5,2:end)),cell2mat(noiseParams(3,2:end)))
+        ylim([0 max(cell2mat(noiseParams(3,2:end)))*1.5])
+        ylabel('Noise Stdev')
+        xlabel('Distance (metres)')
+        savePlot(gcf,'noise-stdev-vs-distance')
 end
