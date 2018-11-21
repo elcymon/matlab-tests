@@ -1,4 +1,4 @@
-function noiseParams = developNoiseModel(expData)
+function [noiseParams,figID] = developNoiseModel(expData,figID)
     allY = cell2mat(expData(1,:)');%sound intensity
     allX = cell2mat(expData(2,:)');%distance in metres
     allT = cell2mat(expData(3,:)');%time
@@ -28,8 +28,9 @@ function noiseParams = developNoiseModel(expData)
     currMin = minD;
     currMax = minD + Step;
     i1 = 1;
-    figure(1)
-    plot(allX,allY)
+    figID = figID + 1;
+    figure(figID)
+    plot(allX,allY,'DisplayName','Experiment Data')
     ylim([0 Inf])
     ylabel('Intensity')
     xlabel('Distance (metres)')
@@ -53,18 +54,23 @@ function noiseParams = developNoiseModel(expData)
         currMax = currMax + Step;
         i1 = i1 + 1;
         
-        plot(pXbin,lineFit,'k','LineWidth',2)
+        plot(pXbin,lineFit,'k','LineWidth',2,'DisplayName','Fitted Line')
     end
     hold off
+    legend({'Experiment Data','Fitted Line'})
     savePlot(gcf,'line-fits-noise-model')
-    figure(2)
+    figID = figID + 1;
+    figure(figID)
+    
         scatter(cell2mat(noiseParams(5,2:end)),cell2mat(noiseParams(7,2:end)))
         ylim([0 max(cell2mat(noiseParams(7,2:end)))*1.5])
         ylabel('(Noise Stdev) / (Mean Intensity)')
         xlabel('Distance (metres)')
         savePlot(gcf,'noise-stdev-to-mean-intensity')
         
-    figure(3)
+    figID = figID + 1;
+    figure(figID)
+    
         scatter(cell2mat(noiseParams(5,2:end)),cell2mat(noiseParams(3,2:end)))
         ylim([0 max(cell2mat(noiseParams(3,2:end)))*1.5])
         ylabel('Noise Stdev')

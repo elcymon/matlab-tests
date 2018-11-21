@@ -1,7 +1,8 @@
-function plotModelsV2(sError1,experimentData,sError,mError)
+function figID = plotModelsV2(sError1,experimentData,sError,mError,figID)
     [~,xModel,pureSignal,~,~,~]...
             = developSoundModel(experimentData);
-    figure(4)
+    figID = figID + 1;
+    figure(figID)
     expDataY = cell2mat(experimentData(1,:)');
     expDataX = cell2mat(experimentData(2,:)');
     [expDataX, expDataOrder] = sort(expDataX);
@@ -33,8 +34,8 @@ function plotModelsV2(sError1,experimentData,sError,mError)
 
     pExp = plot(expDataX,expDataY,'LineWidth',0.1,...
         'DisplayName','Experiment Data');
-
-    pExp.Color = [0.2,0.2,0,0.70];
+    
+    pExp.Color = [0.2,0.2,0,0.50];
 
     p0 = plot(xModel,pureSignal,'-k','LineWidth',1,'DisplayName','Pure');
 
@@ -44,20 +45,31 @@ function plotModelsV2(sError1,experimentData,sError,mError)
     legend('show')
     
     savePlot(gcf,'line-modelled-data-updated')
-    figure(9)
-    subplot(1,2,1)
+    
+    figID = figID + 1;
+    figure(figID)
     plot(xModel,signal100pct,'b','LineWidth',0.1,...
         'DisplayName','100%');
-    subplot(1,2,2)
-    plot(expDataX,expDataY,'LineWidth',0.1,...
-        'DisplayName','Experiment Data');
-
-    figure(5)
-    expDataY = cell2mat(experimentData(1,:)');
-    expDataX = cell2mat(experimentData(2,:)');
-    [expDataX, expDataOrder] = sort(expDataX);
-    expDataY = expDataY(expDataOrder,:);
+    axis square
+    ylim([0 500])
+    ylabel('Sound Intensity')
+    xlabel('Distance in metres')
+    legend('show')
+    savePlot(gcf,'100%-noise')
     
+    figID = figID + 1;
+    figure(figID)
+    plot(cell2mat(experimentData(2,1)),cell2mat(experimentData(1,1)),'LineWidth',0.1,...
+        'DisplayName','Experiment Data Sample');
+    axis square
+    ylim([0 500])
+    ylabel('Sound Intensity')
+    xlabel('Distance in metres')
+    legend('show')
+    savePlot(gcf,'expData')
+    
+    figID = figID + 1;
+    figure(figID)
     ylabel('Sound Intensity')
     xlabel('Distance in metres')
 
@@ -77,7 +89,7 @@ function plotModelsV2(sError1,experimentData,sError,mError)
     pExp = plot(expDataX,expDataY,'LineWidth',1,...
         'DisplayName','Experiment Data');
 
-    pExp.Color = [0.2,0.2,0,0.20];
+    pExp.Color = [0.2,0.2,0,0.50];
 
     p0 = plot(xModel,pureSignal,'-k','LineWidth',2,'DisplayName','Pure');
 
@@ -89,7 +101,8 @@ function plotModelsV2(sError1,experimentData,sError,mError)
     savePlot(gcf,'line-modelled-data')
 
     % working on the pure signal to extract the gradient magnitudes
-    figure(6)
+    figID = figID + 1;
+    figure(figID)
     % ON INSTANTANEOUS DATA
     grads = diff(fliplr(pureSignal)) ./ diff(fliplr(xModel));
     xdistance = linspace(max(xModel),min(xModel),numel(grads));
@@ -108,7 +121,8 @@ function plotModelsV2(sError1,experimentData,sError,mError)
 
     savePlot(gcf,'gradient-magnitude-instantaneous-pure')
 
-    figure(7)
+    figID = figID + 1;
+    figure(figID)
     % ON 40 QSIZE
     xPts = 1:40:numel(pureSignal);
     signalChunks = NaN(size(xPts));
@@ -142,7 +156,8 @@ function plotModelsV2(sError1,experimentData,sError,mError)
     savePlot(gcf,'gradient-magnitude-40-pure')
     
 %     Combined plot of both gradients
-    figure(8)
+    figID = figID + 1;
+    figure(figID)
     plot(xdistance,grads, 'LineWidth',2,...
         'DisplayName','QSize = 1')
     yMax = 0;
